@@ -1,0 +1,63 @@
+name: drsoltantouye-prod
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: drsoltantouye-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: clinic
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_DB: clinic
+    volumes:
+      - clinic_pg_prod:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U clinic -d clinic"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    image: drsoltantouye-api:release
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://clinic:${POSTGRES_PASSWORD}@postgres:5432/clinic
+      JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET:?set JWT_ACCESS_SECRET}
+      WEB_ORIGIN: ${WEB_ORIGIN:-https://drsoltantouye.ir}
+      PORT: 4000
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-Dr@Amir#}
+      ADMIN_PHONE: ${ADMIN_PHONE:-09113556531}
+      INSTAGRAM_ACCESS_TOKEN: ${INSTAGRAM_ACCESS_TOKEN:-}
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_BOT_USERNAME: ${TELEGRAM_BOT_USERNAME:-}
+      TELEGRAM_WEBHOOK_SECRET: ${TELEGRAM_WEBHOOK_SECRET:-}
+    ports:
+      - "127.0.0.1:8011:4000"
+    volumes:
+      - clinic_uploads:/app/apps/api/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    image: drsoltantouye-web:release
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      API_INTERNAL_URL: http://api:4000
+      SITE_URL: ${SITE_URL:-https://drsoltantouye.ir}
+    ports:
+      - "127.0.0.1:8010:3000"
+    depends_on:
+      - api
+
+volumes:
+  clinic_pg_prod:
+  clinic_uploads:

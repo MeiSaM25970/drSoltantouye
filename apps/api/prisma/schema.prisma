@@ -1,0 +1,383 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  PATIENT
+  SECRETARY
+  DENTIST
+  ADMIN
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  ARRIVED
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+enum ConsultationStatus {
+  OPEN
+  ANSWERED
+  CLOSED
+}
+
+enum ConsultationTopic {
+  PAIN
+  COSMETIC
+  ORTHO
+  EMERGENCY
+  OTHER
+}
+
+enum GalleryKind {
+  IMAGE
+  VIDEO
+}
+
+enum ToothCondition {
+  SOUND
+  CARIES
+  FILLED
+  ROOT_CANAL
+  CROWN
+  IMPLANT
+  MISSING
+  BRIDGE
+}
+
+model User {
+  id           String   @id @default(cuid())
+  phone        String   @unique
+  passwordHash String
+  fullName     String
+  roles        Role[]
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  patientProfile         PatientProfile?
+  staffProfile           StaffProfile?
+  doctorProfile          DoctorProfile?
+  refreshSessions        RefreshSession[]
+  appointments           Appointment[]          @relation("PatientAppointments")
+  consultations          Consultation[]
+  consultationMessages   ConsultationMessage[]
+  visitNotes             VisitNote[]
+  auditLogs              AuditLog[]
+  telegramLink           TelegramLink?
+  notificationPreference NotificationPreference?
+}
+
+model RefreshSession {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+
+model PatientProfile {
+  id         String         @id @default(cuid())
+  userId     String         @unique
+  user       User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  nationalId String?
+  birthDate  String?
+  gender         String?
+  job            String?
+  city           String?
+  address        String?
+  emergencyName  String?
+  emergencyPhone String?
+  insuranceName  String?
+  referralSource String?
+  record     PatientRecord?
+}
+
+model StaffProfile {
+  id               String  @id @default(cuid())
+  userId           String  @unique
+  user             User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title            String?
+  telegramAllowed  Boolean @default(false)
+}
+
+model DoctorProfile {
+  id         String          @id @default(cuid())
+  userId     String          @unique
+  user       User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  specialty  String
+  bio        String
+  slug       String          @unique
+  published  Boolean         @default(true)
+  services   DoctorService[]
+  hours      WorkingHour[]
+  blocks     TimeBlock[]
+  appointments Appointment[]
+}
+
+model Service {
+  id          String          @id @default(cuid())
+  slug        String          @unique
+  title       String
+  summary     String
+  description String
+  durationMin Int
+  published   Boolean         @default(true)
+  sortOrder   Int             @default(0)
+  imageUrl    String          @default("")
+  doctors     DoctorService[]
+  appointments Appointment[]
+}
+
+model DoctorService {
+  doctorId  String
+  serviceId String
+  doctor    DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  service   Service       @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@id([doctorId, serviceId])
+}
+
+model WorkingHour {
+  id       String        @id @default(cuid())
+  doctorId String
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  weekday  Int
+  startMin Int
+  endMin   Int
+}
+
+model TimeBlock {
+  id       String        @id @default(cuid())
+  doctorId String
+  doctor   DoctorProfile @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  startsAt DateTime
+  endsAt   DateTime
+  reason   String?
+}
+
+model Appointment {
+  id        String            @id @default(cuid())
+  patientId String
+  patient   User              @relation("PatientAppointments", fields: [patientId], references: [id])
+  doctorId  String
+  doctor    DoctorProfile     @relation(fields: [doctorId], references: [id])
+  serviceId String
+  service   Service           @relation(fields: [serviceId], references: [id])
+  startsAt  DateTime
+  endsAt    DateTime
+  status    AppointmentStatus @default(REQUESTED)
+  note      String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([doctorId, startsAt])
+  @@index([patientId, startsAt])
+}
+
+model Consultation {
+  id        String             @id @default(cuid())
+  patientId String
+  patient   User               @relation(fields: [patientId], references: [id])
+  topic     ConsultationTopic
+  status    ConsultationStatus @default(OPEN)
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  messages  ConsultationMessage[]
+
+  @@index([status, updatedAt])
+}
+
+model ConsultationMessage {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  authorId       String
+  author         User         @relation(fields: [authorId], references: [id])
+  body           String
+  imageUrl       String?
+  createdAt      DateTime     @default(now())
+}
+
+model PatientRecord {
+  id               String         @id @default(cuid())
+  patientProfileId String         @unique
+  patientProfile   PatientProfile @relation(fields: [patientProfileId], references: [id], onDelete: Cascade)
+  fileNo           Int            @unique @default(autoincrement())
+  // patient section
+  chiefComplaint   String?
+  concerns         String[]
+  lastDentalVisit  String?
+  brushing         String?
+  flossing         String?
+  dentalAnxiety    String?
+  habits           String[]
+  conditions       String[]
+  conditionsNote   String?
+  allergies        String?
+  medications      String?
+  pregnancy        String?
+  smoking          String?
+  patientNotes     String?
+  // clinical section
+  asaClass         String?
+  extraoral        String?
+  softTissue       String?
+  periodontal      String?
+  plaque           String?
+  cariesRisk       String?
+  occlusion        String?
+  tmj              String?
+  diagnosis        String?
+  treatmentPlan    String?
+  alerts           String[]
+  clinicalNotes    String?
+  // clinic section
+  fileStatus       String         @default("ACTIVE")
+  consentAt        DateTime?
+  recallAt         String?
+  internalNote     String?
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  teeth            ToothState[]
+  visits           VisitNote[]
+  attachments      Attachment[]
+  ledger           LedgerEntry[]
+}
+
+model LedgerEntry {
+  id        String        @id @default(cuid())
+  recordId  String
+  record    PatientRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  kind      String
+  title     String
+  amount    Int
+  authorId  String?
+  createdAt DateTime      @default(now())
+
+  @@index([recordId, createdAt])
+}
+
+model ToothState {
+  id        String         @id @default(cuid())
+  recordId  String
+  record    PatientRecord  @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  fdi       Int
+  condition ToothCondition @default(SOUND)
+  note      String?
+
+  @@unique([recordId, fdi])
+}
+
+model VisitNote {
+  id        String        @id @default(cuid())
+  recordId  String
+  record    PatientRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  authorId  String
+  author    User          @relation(fields: [authorId], references: [id])
+  body      String
+  internal  Boolean       @default(true)
+  createdAt DateTime      @default(now())
+}
+
+model Attachment {
+  id        String        @id @default(cuid())
+  recordId  String
+  record    PatientRecord @relation(fields: [recordId], references: [id], onDelete: Cascade)
+  url       String
+  caption   String?
+  byPatient Boolean       @default(false)
+  createdAt DateTime      @default(now())
+}
+
+model TelegramLink {
+  id            String    @id @default(cuid())
+  userId        String    @unique
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chatId        String?
+  linkCode      String?   @unique
+  codeExpiresAt DateTime?
+  connectedAt   DateTime?
+}
+
+model NotificationPreference {
+  id                    String  @id @default(cuid())
+  userId                String  @unique
+  user                  User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  appointmentCreated    Boolean @default(true)
+  appointmentCancelled  Boolean @default(true)
+  consultationCreated   Boolean @default(true)
+  consultationMessage   Boolean @default(false)
+}
+
+model NotificationOutbox {
+  id        String    @id @default(cuid())
+  chatId    String
+  event     String
+  text      String
+  status    String    @default("pending")
+  attempts  Int       @default(0)
+  lastError String?
+  createdAt DateTime  @default(now())
+  sentAt    DateTime?
+
+  @@index([status, createdAt])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  actor     User?    @relation(fields: [actorId], references: [id])
+  action    String
+  entity    String
+  entityId  String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  @@index([entity, entityId])
+}
+
+model ClinicSettings {
+  id         String @id @default("clinic")
+  name       String
+  doctorName String
+  tagline    String
+  heroTitle  String
+  heroLead   String
+  about      String
+  address    String
+  phone1     String
+  phone2     String
+  instagram  String
+  hoursNote  String
+  logoUrl    String @default("")
+  content    Json   @default("{}")
+}
+
+model GalleryItem {
+  id           String      @id @default(cuid())
+  externalId   String?     @unique
+  kind         GalleryKind
+  url          String
+  posterUrl    String?
+  caption      String      @default("")
+  instagramUrl String?
+  sortOrder    Int         @default(0)
+  published    Boolean     @default(true)
+}
+
+model Faq {
+  id        String  @id @default(cuid())
+  question  String
+  answer    String
+  sortOrder Int     @default(0)
+  published Boolean @default(true)
+}

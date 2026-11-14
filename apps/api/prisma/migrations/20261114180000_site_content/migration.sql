@@ -1,0 +1,2 @@
+ALTER TABLE "ClinicSettings" ADD COLUMN "content" JSONB NOT NULL DEFAULT '{}';
+ALTER TABLE "Service" ADD COLUMN "imageUrl" TEXT NOT NULL DEFAULT '';

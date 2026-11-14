@@ -1,0 +1,1 @@
+ALTER TABLE "ClinicSettings" ADD COLUMN "logoUrl" TEXT NOT NULL DEFAULT '';
