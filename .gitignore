@@ -9,3 +9,4 @@ coverage
 .env.production
 apps/api/uploads/*
 !apps/api/uploads/.gitkeep
+release
