@@ -114,8 +114,7 @@ export default function RecordPage() {
 
         {tab === "treatment" ? (
           <div className="space-y-6">
-            <p className="rounded-2xl bg-info-soft px-4 py-3 text-sm leading-7 text-info">این بخش را دندانپزشک تکمیل می‌کند و شما فقط می‌توانید ببینید.</p>
-            <SectionForm section="clinical" values={record.values} editable={false} onSave={save} hideHeader />
+            <SectionForm section="clinical" values={record.values} editable={false} onSave={save} />
             {record.teeth.length ? (
               <Card>
                 <h2 className="mb-4 font-semibold">نقشه دندان‌ها</h2>

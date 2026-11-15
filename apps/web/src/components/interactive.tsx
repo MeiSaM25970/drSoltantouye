@@ -158,9 +158,9 @@ export function Switch({ checked, onChange, label, disabled }: { checked: boolea
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative h-7 w-12 shrink-0 rounded-full transition-colors duration-300 disabled:opacity-50 ${checked ? "bg-accent" : "bg-line"}`}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-300 disabled:opacity-50 ${checked ? "bg-accent" : "bg-line"}`}
     >
-      <span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-all duration-300 ease-[var(--ease-spring)] ${checked ? "right-6" : "right-1"}`} />
+      <span className={`absolute top-1 h-4 w-4 rounded-full bg-white shadow transition-all duration-300 ease-[var(--ease-spring)] ${checked ? "right-6" : "right-1"}`} />
     </button>
   );
 }

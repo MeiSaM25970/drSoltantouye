@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  SECTION_META,
   faDigits,
   emptyValue,
   groupsOf,
@@ -17,6 +16,7 @@ import {
 import { ApiError } from "@/lib/api";
 import { formatIsoDate } from "@/lib/jalali";
 import { Badge, Button, ErrorNote, Select, TextArea, TextInput } from "./ui";
+import { control } from "./control-style";
 import { Icon } from "./icons";
 import { ChipGroup, JalaliDateField, Switch, TagInput, useToast } from "./interactive";
 
@@ -29,17 +29,11 @@ export function SectionForm({
   values,
   editable,
   onSave,
-  title,
-  lead,
-  hideHeader,
 }: {
   section: RecordSection;
   values: RecordValues;
   editable: boolean;
   onSave: (patch: RecordPatch) => Promise<void>;
-  title?: string;
-  lead?: string;
-  hideHeader?: boolean;
 }) {
   const toast = useToast();
   const groups = useMemo(
@@ -68,7 +62,6 @@ export function SectionForm({
   }, [dirty]);
 
   if (!groups.length) return null;
-  const meta = SECTION_META[section];
 
   async function save() {
     setPending(true);
@@ -87,20 +80,6 @@ export function SectionForm({
 
   return (
     <div className="space-y-5">
-      {hideHeader ? null : (
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h2 className="text-xl font-semibold">{title ?? meta.title}</h2>
-            <p className="mt-1 text-sm leading-7 text-muted">{lead ?? meta.lead}</p>
-          </div>
-          {editable ? (
-            <Badge tone="ok"><Icon name="check" size={12} />قابل ویرایش · {meta.who}</Badge>
-          ) : (
-            <Badge tone="neutral"><Icon name="lock" size={12} />فقط مشاهده</Badge>
-          )}
-        </div>
-      )}
-
       {groups.map((group) => (
         <section key={group.title} className="card p-5 md:p-6">
           <h3 className="mb-4 flex items-center gap-2 text-[15px] font-semibold"><span className="h-4 w-1 rounded-full bg-accent" />{group.title}</h3>
@@ -191,8 +170,8 @@ function FieldControl({ field, value, editable, onChange, dirty }: { field: Reco
       return (
         <div>
           <span className="mb-1.5 block text-[13px] font-medium text-ink-2">{label}</span>
-          <div className="flex min-h-[52px] items-center justify-between gap-4 rounded-2xl border border-line bg-surface px-4 py-2 transition hover:border-ink/25">
-            <span className={`text-[15px] ${value ? "font-medium text-ok" : "text-muted"}`}>{value ? "بله" : "خیر"}</span>
+          <div className={`${control} flex items-center justify-between gap-4`}>
+            <span className={value ? "font-medium text-ok" : "text-muted"}>{value ? "بله" : "خیر"}</span>
             <Switch checked={Boolean(value)} onChange={onChange} label={field.label} />
           </div>
         </div>

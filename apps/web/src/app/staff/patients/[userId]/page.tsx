@@ -174,14 +174,14 @@ export default function PatientFilePage() {
       <div key={tab} className="page-in">
         {tab === "patient" ? (
           <>
-            <SectionForm section="patient" values={record.values} editable={access.patient} onSave={save} hideHeader />
+            <SectionForm section="patient" values={record.values} editable={access.patient} onSave={save} />
           </>
         ) : null}
 
         {tab === "clinical" ? (
           <div className="space-y-8">
             <div>
-              <SectionForm section="clinical" values={record.values} editable={access.clinical} onSave={save} hideHeader />
+              <SectionForm section="clinical" values={record.values} editable={access.clinical} onSave={save} />
             </div>
             <Card>
               <h2 className="mb-4 font-semibold">نقشه دندان‌ها</h2>
@@ -211,7 +211,7 @@ export default function PatientFilePage() {
         {tab === "clinic" && showClinic ? (
           <div className="space-y-8">
             <div>
-              <SectionForm section="clinic" values={record.values} editable={access.clinic} onSave={save} hideHeader />
+              <SectionForm section="clinic" values={record.values} editable={access.clinic} onSave={save} />
             </div>
             {record.ledger ? (
               <div>
